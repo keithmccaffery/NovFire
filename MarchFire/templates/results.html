@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+
+{% block title %}Results{% endblock %}
+
+{% block main %}
+<h3>Results Page for the Building {{ username }}</h3>
+        <table class="table table-striped", style= "text-align: left;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Location</th>
+                        <th>Asset</th>
+                        <th style= "text-align: center;">Fault</th>
+                        <th style= "text-align: center;">Remedy</th>
+                        <th style= "text-align: center;">Comment</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in results %}
+                        <tr>
+                            <td>{{ result.id }}</td>
+                            <td>{{ result.user_id }}</td>
+                            <td>{{ result.asset }}</td>
+                            <td>{{ result.fault }}</td>
+                            <td>{{ result.remedy }}</td>
+                            <td>{{ result.comment }}</td>
+                            <td>{{ result.timestamp }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <script>
+                document.addEventListener('DOMContentLoaded', (event) => {
+                    console.log(document.documentElement.innerHTML);
+                });
+            </script>
+{% endblock %}

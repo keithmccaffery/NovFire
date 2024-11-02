@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera and Azure Storage Example</title>
+</head>
+<body>
+    <label for="fileInput" class="custom-file-upload">Capture Image<span id="fileName"></span></label>
+    <input type="file" accept="image/*" capture="camera" id="fileInput" style="display: none;" onchange="updateFileName()">
+    <br><br><button onclick="uploadImage()">Upload Image</button><br><br>
+
+    <script>
+        function updateFileName() {
+            var input = document.getElementById('fileInput');
+            var fileName = input.value.split('\\').pop();
+            document.getElementById('fileName').textContent = " - " + fileName;
+        }
+        const storageAccountName = 'firstfire';
+        const containerName = 'firedoors1';
+        sasToken = "?sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2024-06-05T14:08:47Z&st=2024-02-11T05:08:47Z&spr=https,http&sig=RXTEYfSJv1wwz9P6%2BrSJln8scy%2B15cRb8LBFDgWYPCY%3D";
+
+        async function uploadImage() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            console.log(file);
+
+            if (file) {
+                const blobName = `image_${Date.now()}.jpg`;
+                const url = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blobName}${sasToken}`;
+
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'x-ms-blob-type': 'BlockBlob',
+                        'Content-Type': file.type,
+                        'x-ms-version': '2020-04-08'
+                    },
+                    body: file
+                });
+
+                if (response.ok) {
+                    console.log('Upload successful');
+                    document.getElementById('imageUrl').innerText = url;
+                    document.getElementById('imageUrlInput').value = url;
+                } else {
+                    console.log('Upload failed');
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', (event) => {
+            console.log(document.documentElement.innerHTML);
+            // Event listener for the form that submits to "/doors"
+            document.querySelector('form[action="/doors"]').addEventListener('submit', function(event) {
+                event.preventDefault();  // Prevent the form from being submitted immediately
+
+                var file = document.querySelector('input[type="file"]').files[0];
+                uploadImage(file).then(function() {
+                    // Check if the form exists before trying to submit it
+                    var formElement = document.querySelector('form[action="/doors"]');
+                    if (formElement) {
+                        formElement.submit();
+                    }
+                });
+            });
+        });
+            console.log(document.documentElement.innerHTML);
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Event listener for the form that submits to "/em_lights"
+            var formElement = document.querySelector('#emLightsForm');
+            if (formElement) {
+                formElement.addEventListener('submit', function(event) {
+                    event.preventDefault();  // Prevent the form from being submitted immediately
+
+                    var file = document.querySelector('input[type="file"]').files[0];
+                    uploadImage(file).then(function() {
+                        formElement.submit();
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+<div id="imageUrl"></div>
+</html>

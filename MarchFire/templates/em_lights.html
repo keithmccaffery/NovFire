@@ -1,0 +1,111 @@
+{% extends "layout.html" %}
+
+{% block title %}Emergency Lighting{% endblock %}
+
+{% block main %}
+<h3>Emergency LightingInspections</h3>
+<div style= "text-align: left;">
+    <p > 1. Input the location or identity of the emergency light being inpected.</p>
+    <p>2. Selection menu is several criteria for inspection.</p>
+    <p>3. For each item the emergency light fails to pass, log the fault which be recorded on results page.</p>
+    <p>4. A emergency light could fail on more than one criteria, navigate back to the Emergency light page to complete the assessment see 1. above</p>
+    <p>4. When the assessment for the emergency light is complete, enter the location or idendity of the emergency light see 1. above or go to another asset class</p>
+</div>
+    <form action="/em_lights" method="post" enctype="multipart/form-data">
+        <input autocomplete="off" autofocus name="location" placeholder="Location (e.g., L1 Car park adj Lift)" type="text">
+        <select name="assetType" class="asset-type-select">
+            <option disabled>Select Asset Type</option>
+            <option value="Chamaeleon Emergency enLighten">Chamaeleon Emergency enLighten </option>
+            <option value="Deco Emergency enLighten ">Deco Emergency enLighten </option>
+            <option value="Vico LED Linear Batten">Vico LED Linear Batten </option>
+            <option value="Emergency LED Oyster">Emergency LED Oyster </option>
+            <option value="Emergency LED Oyster 340mm">Emergency LED Oyster 340mm </option>
+            <option value="LEDfire Emergency Light Core Surface Mount">LEDfire Emergency Light Core Surface Mount </option>
+            <option value="Emergency Luminaire LED">Emergency Luminaire LED </option>
+            <option value="Emergency LED Batten 1200mm">Emergency LED Batten 1200mm </option>
+            <option value="Emergency LED Batten 600mm">Emergency LED Batten 600mm </option>
+            <option value="Emergency Luminaire LED Flood">Emergency Luminaire LED Flood </option>
+            <option value="EXIT MAINT LED DS LP CLEVERFIT">EXIT MAINT LED DS LP CLEVERFIT </option>
+            <option value="EXIT LED 24M WALL MOUNTED BOXIT">EXIT LED 24M WALL MOUNTED BOXIT </option>
+            <option value="EXIT EMERGENCY 1.5W 24M RECESSED RAZOR">EXIT EMERGENCY 1.5W 24M RECESSED RAZOR </option>
+            <option value="EXIT LED 24M SURF SLIMBLADE CORE">EXIT LED 24M SURF SLIMBLADE CORE </option>
+            
+        </select>    
+        <br><br>
+            <select name="light_fault" class="light-fault-select">
+                <option disabled>Light Inspection Criteria</option>
+                <option selected value="0">Light sound - record status & image otherwise select from from drop down menu</option>
+                {% for light_fault in light_faults %}
+                    <option value="{{light_fault['fault_id'] }}">{{  light_fault['inspect'] }}</option>
+                {% endfor %}
+            </select>>
+			<br><br>
+        <input autocomplete="off" autofocus name="comment" placeholder=" Additional comment " type="text"><br>
+        <!-- Your hidden file input field -->
+        <input type="file" accept="image/*" capture="environment" id="fileInput" style="visibility: hidden; position: absolute;" onchange="updateFileName()">
+
+        <!-- Your submit button -->
+        <br><button type="submit">Log Asset Checked</button><br><br>
+        <div id="imageUrls"></div>
+            <!-- Include capture.html for capturing an image -->
+            {% include 'captureE.html' %}
+            <input type="hidden" id="imageUrlInput" name="imageUrl">
+    </form>
+
+    <script>
+    // This script stores the viewport size in a cookie
+    document.cookie = "viewportWidth=" + window.innerWidth;
+</script>
+<script src="{{ url_for('static', filename='main.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        console.log(document.documentElement.innerHTML);
+    });
+</script>
+<script>
+    // Modify the image capture code to create a new hidden input field for each image
+    function handleImageCapture(files) {
+        // Process each file
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            var reader = new FileReader();
+
+            reader.onloadend = function() {
+                var imageUrl = reader.result;
+                //console.log(imageUrl);  
+
+                // Create a new hidden input field
+                var input = document.createElement("input");
+                input.type = "hidden";
+                input.name = "imageUrls";
+                input.value = imageUrl;
+
+                // Append the new input field to the div
+                document.getElementById("imageUrls").appendChild(input);
+            }
+
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Add an event listener to the form submission event
+    document.querySelector('form[action="/em_lights"]').addEventListener('submit', function(event) {
+        event.preventDefault();  // Prevent the form from being submitted immediately
+
+        // Get the selected files
+        var files = document.querySelector('input[type="file"]').files;
+
+        // Call the handleImageCapture function with the selected files
+        handleImageCapture(files);
+
+        // Check if the form exists before trying to submit it
+        var formElement = document.querySelector('form[action="/em_lights"]');
+        if (formElement) {
+            formElement.submit();
+        }
+    });
+</script>
+<div id="imageUrl"></div>
+</body>
+</html>
+{% endblock %}

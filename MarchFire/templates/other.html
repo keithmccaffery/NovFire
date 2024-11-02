@@ -1,0 +1,127 @@
+{% extends "layout.html" %}
+
+{% block title %}Other assets{% endblock %}
+
+{% block main %}
+<h3>Other asset Inspections</h3>
+<!--
+<div style= "text-align: left;">
+    <p > 1. Input the location or identity of the asset being inpected.</p>
+    <p>2. Selection menu is 30 criteria for inspection.</p>
+    <p>3. For each item the door fails to pass, log the fault which be recorded on results page.</p>
+    <p>4. A door could fail on more than one criteria, navigate back to the Doors page to complete the assessment see 1. above</p>
+    <p>4. When the assessment for the door is complete, enter the location or idendity of the door see 1. above or go to another asset class</p>
+</div>
+-->
+    <form action="/other" method="post" enctype="multipart/form-data">
+        <input autocomplete="off" autofocus name="location" placeholder="Location (e.g., Unit 16 , L8)" type="text">
+        <select name="assetType" class="asset-type-select">
+            <option disabled selected>Select Asset Type</option>
+            <option value="No selection">No selection </option>
+            <option value="Equipment">Equipment </option>
+            <option value="Balcony door">Balcony door </option>
+            <option value="Door">Door </option>
+            <option value="Lock">Lock </option>
+            <option value="Window">Window </option>
+            <option value="Wall">Wall </option>
+            <option value="Ceiling">Ceiling </option>
+            <option value="Toilet">Toilet </option>
+            <option value="Basin">Basin </option>
+            <option value="Bath">Bath </option>
+            <option value="Shower">Shower </option>
+            <option value="Cabinet">Cabinet </option>
+            <option value="Wardrobe">Wardrobe </option>
+            <option value="Kitchen general">Kitchen general </option>
+            <option value="Bed">Bed </option> 
+            <option value="Furniture">Furniture </option>
+            <option value="Deck">Deck </option>
+            <option value="Lighting">Lighting </option>
+            <option value="Floor">Floor </option>   
+            <option value="Floor covering">Floor covering </option>
+            <option value="Guttering">Guttering </option>
+            <option value="Fence">Fence </option>
+            <option value="Gate">Gate </option>
+        </select>    
+        <br><br>
+        <!--    
+        <select name="door_fault" class="door-fault-select">
+                <option disabled>Door Inspection Criteria</option>
+                <option selected value="0">Door sound - record status & image otherwise select from from drop down menu</option>
+                {% for door_fault in door_faults %}
+                    <option value="{{door_fault['fault_id'] }}">{{  door_fault['inspect'] }}</option>
+                {% endfor %}
+            </select>
+        -->
+        <input autocomplete="off" autofocus name="fault" placeholder=" Fault " type="text"><br>
+        <br><br>
+		<input autocomplete="off" autofocus name="remedy" placeholder=" Remedy " type="text"><br>	
+        <br><br>
+        <input autocomplete="off" autofocus name="comment" placeholder=" Additional comment " type="text"><br>
+        <!-- Your hidden file input field -->
+        <input type="file" accept="image/*" capture="environment" id="fileInput" style="visibility: hidden; position: absolute;" onchange="updateFileName()">
+
+        <!-- Your submit button -->
+        <br><button type="submit">Log Asset Checked</button><br><br>
+        <div id="imageUrls"></div>
+            <!-- Include capture.html for capturing an image -->
+            {% include 'captureO.html' %}
+            <input type="hidden" id="imageUrlInput" name="imageUrl">
+    </form>
+
+    <script>
+    // This script stores the viewport size in a cookie
+    document.cookie = "viewportWidth=" + window.innerWidth;
+</script>
+<script src="{{ url_for('static', filename='main.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        console.log(document.documentElement.innerHTML);
+    });
+</script>
+<script>
+    // Modify the image capture code to create a new hidden input field for each image
+    function handleImageCapture(files) {
+        // Process each file
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            var reader = new FileReader();
+
+            reader.onloadend = function() {
+                var imageUrl = reader.result;
+                //console.log(imageUrl);  
+
+                // Create a new hidden input field
+                var input = document.createElement("input");
+                input.type = "hidden";
+                input.name = "imageUrls";
+                input.value = imageUrl;
+
+                // Append the new input field to the div
+                document.getElementById("imageUrls").appendChild(input);
+            }
+
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Add an event listener to the form submission event
+    document.querySelector('form[action="/other"]').addEventListener('submit', function(event) {
+        event.preventDefault();  // Prevent the form from being submitted immediately
+
+        // Get the selected files
+        var files = document.querySelector('input[type="file"]').files;
+
+        // Call the handleImageCapture function with the selected files
+        handleImageCapture(files);
+
+        // Check if the form exists before trying to submit it
+        var formElement = document.querySelector('form[action="/other"]');
+        if (formElement) {
+            formElement.submit();
+        }
+    });
+</script>
+<div id="imageUrl"></div>
+</body>
+</html>
+{% endblock %}

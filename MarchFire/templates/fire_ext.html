@@ -1,0 +1,112 @@
+{% extends "layout.html" %}
+
+{% block title %}Fire Extinguishers{% endblock %}
+
+{% block main %}
+<h3>Fire Extinguisher Inspections</h3>
+<div style= "text-align: left;">
+    <p > 1. Input the location or identity of the fire extinguisher being inpected.</p>
+    <p>2. Selection menu is 4 criteria for inspection.</p>
+    <p>3. For each item the fire extinguisher fails to pass, log the fault which be recorded on results page.</p>
+    <p>4. A fire extinguisher could fail on more than one criteria, navigate back to the Fire extinguisher page to complete the assessment see 1. above</p>
+    <p>4. When the assessment for the fire extinguisher is complete, enter the location or idendity of the fire extinguisher see 1. above or go to another asset class</p>
+</div>
+    <form action="/fire_ext" method="post" enctype="multipart/form-data">
+        <input autocomplete="off" autofocus name="location" placeholder="Location (e.g., L7 NE fire cabinet)" type="text">
+            
+            <select name="assetType" class="asset-type-select">
+                <option disabled>Select Asset Type</option>
+                <option value="2.3kg ABE Powder Type Portable Fire Extinguisher">2.3kg ABE Powder Type </option>
+                <option value="4.5kg ABE Powder Type Portable Fire Extinguisher">4.5kg  ABE Powder Type </option>
+                <option value="9.0kg ABE Powder Type Portable Fire Extinguisher">9.0kg  ABE Powder Type </option>
+                <option value="2.5kg BE Powder Type Portable Fire Extinguisher">2.5kg BE Powder Type </option>
+                <option value="4.5kg BE Powder Type Portable Fire Extinguisher">4.5kg BE Powder Type </option>
+                <option value="9.0kg BE Powder Type Portable Fire Extinguisher">9.0kg BE Powder Type </option>
+                <option value="2.0kg CO2 Type Portable Fire Extinguisher">2.0kg CO2 Type </option>
+                <option value="3.5kg CO2 Type Portable Fire Extinguisher">3.5kg CO2 Type </option>
+                <option value="5.0kg CO2 Type Portable Fire Extinguisher">5.0kg CO2 Type </option>
+                <option value="9.0L Air/Water Type Portable Fire Extinguisher">9.0L Air/Water Type </option>
+                <option value="9.0L AFFF Type Portable Fire Extinguisher">9.0L AFFF Type </option>
+                <option value="9.0L ECO Foam F3 Fluorine Free Foam Type Portable Fire Extinguisher">9.0L ECO Foam F3 Fluorine Free Foam Type </option>
+                <option value="2.0L Wet Chemical Type Portable Fire Extinguisher">2.0L Wet Chemical Type </option>
+                <option value="7.0L Wet Chemical Type Portable Fire Extinguisher">7.0L Wet Chemical Type </option>
+                
+            </select>
+            <br><br>
+            <select name="fireEx_fault" class="fireEx-fault-select">
+                <option disabled>Fire Extinguisher Inspection Criteria</option>
+                <option selected value="0">Fire Extinguisher sound - record status & image otherwise select from from drop down menu</option>
+                {% for fireEx_fault in fireEx_faults %}
+                    <option value="{{fireEx_fault['fault_id'] }}">{{  fireEx_fault['inspect'] }}</option>
+                {% endfor %}
+            </select>>
+			<br><br>
+        <input autocomplete="off" autofocus name="comment" placeholder=" Additional comment " type="text"><br>
+        <!-- Your hidden file input field -->
+        <input type="file" accept="image/*" capture="environment" id="fileInput" style="visibility: hidden; position: absolute;" onchange="updateFileName()">
+
+        <!-- Your submit button -->
+        <br><button type="submit">Log Asset Checked</button><br><br>
+        <div id="imageUrls"></div>
+            <!-- Include capture.html for capturing an image -->
+            {% include 'captureF.html' %}
+            <input type="hidden" id="imageUrlInput" name="imageUrl">
+    </form>
+
+    <script>
+    // This script stores the viewport size in a cookie
+    document.cookie = "viewportWidth=" + window.innerWidth;
+</script>
+<script src="{{ url_for('static', filename='main.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        console.log(document.documentElement.innerHTML);
+    });
+</script>
+<script>
+    // Modify the image capture code to create a new hidden input field for each image
+    function handleImageCapture(files) {
+        // Process each file
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            var reader = new FileReader();
+
+            reader.onloadend = function() {
+                var imageUrl = reader.result;
+                //console.log(imageUrl);  
+
+                // Create a new hidden input field
+                var input = document.createElement("input");
+                input.type = "hidden";
+                input.name = "imageUrls";
+                input.value = imageUrl;
+
+                // Append the new input field to the div
+                document.getElementById("imageUrls").appendChild(input);
+            }
+
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Add an event listener to the form submission event
+    document.querySelector('form[action="/fire_ext"]').addEventListener('submit', function(event) {
+        event.preventDefault();  // Prevent the form from being submitted immediately
+
+        // Get the selected files
+        var files = document.querySelector('input[type="file"]').files;
+
+        // Call the handleImageCapture function with the selected files
+        handleImageCapture(files);
+
+        // Check if the form exists before trying to submit it
+        var formElement = document.querySelector('form[action="/fire_ext"]');
+        if (formElement) {
+            formElement.submit();
+        }
+    });
+</script>
+<div id="imageUrl"></div>
+</body>
+</html>
+{% endblock %}

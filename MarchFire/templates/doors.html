@@ -1,0 +1,111 @@
+{% extends "layout.html" %}
+
+{% block title %}Doors{% endblock %}
+
+{% block main %}
+<h3>Door Inspections</h3>
+<div style= "text-align: left;">
+    <p > 1. Input the location or identity of the door being inpected.</p>
+    <p>2. Selection menu is 30 criteria for inspection.</p>
+    <p>3. For each item the door fails to pass, log the fault which be recorded on results page.</p>
+    <p>4. A door could fail on more than one criteria, navigate back to the Doors page to complete the assessment see 1. above</p>
+    <p>4. When the assessment for the door is complete, enter the location or idendity of the door see 1. above or go to another asset class</p>
+</div>
+    <form action="/doors" method="post" enctype="multipart/form-data">
+        <input autocomplete="off" autofocus name="location" placeholder="Location (e.g., Unit 16 front door, L8)" type="text">
+        <select name="assetType" class="asset-type-select">
+            <option disabled>Select Asset Type</option>
+            <option value="Entrance door">Entrance door </option>
+            <option value="Fire stair door">Fire stair door </option>
+            <option value="Double door">Double door </option>
+            <option value="Garbage schute door">Garbage schute door </option>
+            <option value="Electrical cabinet door">Electrical cabinet door </option>
+            <option value="Telecoms cabinet door ">Telecoms cabinet door </option>
+            <option value="Storeroom door">Storeroom door </option>
+            <option value="Garbage bin room door">Garbage bin room door </option>
+            <option value="Office door">Office door </option>
+            <option value="Liftroom door">Liftroom door </option> 
+            <option value="Carpark egress door">Carpark egress door </option>
+            <option value="Swimming pool door">Swimming pool door </option>
+            <option value="Roof deck door ">Roof deck door </option>  
+            <option value="Non Fire rated door - no inpection">Non Fire rated door - no inpection </option>
+            
+        </select>    
+        <br><br>
+            <select name="door_fault" class="door-fault-select">
+                <option disabled>Door Inspection Criteria</option>
+                <option selected value="0">Door sound - record status & image otherwise select from from drop down menu</option>
+                {% for door_fault in door_faults %}
+                    <option value="{{door_fault['fault_id'] }}">{{  door_fault['inspect'] }}</option>
+                {% endfor %}
+            </select>
+			<br><br>
+        <input autocomplete="off" autofocus name="comment" placeholder=" Additional comment " type="text"><br>
+        <!-- Your hidden file input field -->
+        <input type="file" accept="image/*" capture="environment" id="fileInput" style="visibility: hidden; position: absolute;" onchange="updateFileName()">
+
+        <!-- Your submit button -->
+        <br><button type="submit">Log Asset Checked</button><br><br>
+        <div id="imageUrls"></div>
+            <!-- Include capture.html for capturing an image -->
+            {% include 'captureD.html' %}
+            <input type="hidden" id="imageUrlInput" name="imageUrl">
+    </form>
+
+    <script>
+    // This script stores the viewport size in a cookie
+    document.cookie = "viewportWidth=" + window.innerWidth;
+</script>
+<script src="{{ url_for('static', filename='main.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        console.log(document.documentElement.innerHTML);
+    });
+</script>
+<script>
+    // Modify the image capture code to create a new hidden input field for each image
+    function handleImageCapture(files) {
+        // Process each file
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            var reader = new FileReader();
+
+            reader.onloadend = function() {
+                var imageUrl = reader.result;
+                //console.log(imageUrl);  
+
+                // Create a new hidden input field
+                var input = document.createElement("input");
+                input.type = "hidden";
+                input.name = "imageUrls";
+                input.value = imageUrl;
+
+                // Append the new input field to the div
+                document.getElementById("imageUrls").appendChild(input);
+            }
+
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Add an event listener to the form submission event
+    document.querySelector('form[action="/doors"]').addEventListener('submit', function(event) {
+        event.preventDefault();  // Prevent the form from being submitted immediately
+
+        // Get the selected files
+        var files = document.querySelector('input[type="file"]').files;
+
+        // Call the handleImageCapture function with the selected files
+        handleImageCapture(files);
+
+        // Check if the form exists before trying to submit it
+        var formElement = document.querySelector('form[action="/doors"]');
+        if (formElement) {
+            formElement.submit();
+        }
+    });
+</script>
+<div id="imageUrl"></div>
+</body>
+</html>
+{% endblock %}

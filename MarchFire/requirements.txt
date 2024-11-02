@@ -1,0 +1,10 @@
+cs50==9.3.4
+Flask==2.0.2
+Flask-Session==0.4.0
+Werkzeug==2.0.2
+icecream==2.1.1
+reportlab==3.6.1
+Pillow==8.3.2
+requests==2.26.0
+pytz==2021.3
+urllib3==1.26.7

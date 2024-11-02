@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera and Azure Storage Example</title>
+</head>
+<body>
+    <label for="fileInput" class="custom-file-upload">Capture Image<span id="fileName"></span></label>
+    <input type="file" accept="image/*" capture="environment" id="fileInput" style="display: none;" onchange="updateFileName()" multiple>
+    <br><br><br><br>
+
+    <script>
+        // Updates the file name displayed on the webpage based on the selected file input.
+        function updateFileName() {
+            var input = document.getElementById('fileInput');
+            var fileName = input.value.split('\\').pop();
+            document.getElementById('fileName').textContent = " - " + fileName;
+        }
+        const storageAccountName = 'firstfire';
+        const containerName = 'firedoors1';
+        sasToken = "?sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2024-06-05T14:08:47Z&st=2024-02-11T05:08:47Z&spr=https,http&sig=RXTEYfSJv1wwz9P6%2BrSJln8scy%2B15cRb8LBFDgWYPCY%3D";
+
+        // Asynchronously uploads an image file to a specified URL using fetch API with error handling and logging.
+        async function uploadImage(file) {
+            console.log('uploadImage called');
+            console.log('file:', file);
+
+            if (file) {
+                const blobName = `image_${Date.now()}.jpg`;
+                const url = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blobName}${sasToken}`;
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'PUT',
+                        headers: {
+                            'x-ms-blob-type': 'BlockBlob',
+                            'Content-Type': file.type,
+                            'x-ms-version': '2020-04-08'
+                        },
+                        body: file
+                    });
+
+                    if (response.ok) {
+                        console.log('Upload successful');
+                        document.getElementById('imageUrl').innerText = url;
+                        document.getElementById('imageUrlInput').value = url;    
+                    } else {
+                        console.log('Upload failed:', response);
+                        throw new Error('Upload failed');
+                    }
+                    console.log('url:', url);
+                    return url;
+                    } catch (error) {
+                        console.error('Error during fetch:', error);
+                    }
+                    }
+                    }
+                    document.querySelector('form[action="/other"]').addEventListener('submit', function(event) {
+                        event.preventDefault();  // Prevent the form from being submitted immediately
+                        console.log('form submitted');
+                    });
+
+                    
+                    var file;
+                    var uploadedImageUrls = [];
+
+                    document.querySelector('input[type="file"]').addEventListener('change', function(event) {
+                        file = event.target.files[0];
+                        console.log('file:', file);
+                        uploadImage(file).then(function(url) {
+                            // Add the URL of the uploaded image to the array
+                            uploadedImageUrls.push(url);
+                            console.log('Image uploaded, URL:', url);
+                        });
+                    });
+
+                    document.querySelector('form[action="/other"]').addEventListener('submit', function(event) {
+                        event.preventDefault();  // Prevent the form from being submitted immediately
+                        console.log('form submitted');
+
+                        // Get the imageUrlInput and imageUrls elements
+                        var imageUrlInput = document.getElementById('imageUrlInput');
+                        var imageUrls = document.getElementById('imageUrls');
+
+                        // Join the elements of the array into a string, with each URL separated by a comma
+                        var imageUrlString = uploadedImageUrls.join(';');
+
+                        console.log('Image URLs:', imageUrlString);
+                        if (imageUrlInput) {
+                            imageUrlInput.value = imageUrlString;
+                        }
+                        if (imageUrls) {
+                            imageUrls.value = imageUrlString;
+                        }
+                    });
+
+                    
+    </script>
+</body>
+<div id="imageUrl"></div>
+</html>

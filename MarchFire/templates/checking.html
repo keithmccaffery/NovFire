@@ -1,0 +1,291 @@
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, width=device-width">
+
+    <!-- http://getbootstrap.com/docs/5.1/ -->
+    <link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" rel="stylesheet">
+    <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"></script>
+
+    <!-- https://favicon.io/emoji-favicons/money-bag/ -->
+    <!-- <link href="/static/favicon.ico" rel="icon"> -->
+
+    <link href="/static/styles.css" rel="stylesheet">
+
+    <title>Fire: Log InDoors</title>
+
+</head>
+
+<body>
+
+    <nav class="bg-light border navbar navbar-expand-md navbar-light">
+        <div class="container-fluid">
+            <a class="navbar-brand main-heading" id="main-heading" href="/">Fire Inspection for Annual Fire Safety Statement</a>
+            <button aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler" data-bs-target="#navbar" data-bs-toggle="collapse" type="button">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbar">
+                
+                    <ul class="navbar-nav me-auto mt-2">
+                        <li class="nav-item"><a class="nav-link" href="/doors">Doors</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/em_lights">Emergency Lighting</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/fire_ext">Fire Extinguishers</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/results">Results</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/report">Final Report</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                    </ul>
+                    <ul class="navbar-nav ms-auto mt-2">
+                        <li class="nav-item"><a class="nav-link" href="/logout">Log Out</a></li>
+                    </ul>
+                
+            </div>
+        </div>
+    </nav>
+
+    
+
+    <main class="container-fluid py-5 text-center">
+        
+<h3>Door Inspections</h3>
+<div style="text-align: left;">
+<p> 1. Input the location or identity of the door being inpected.</p>
+<p>2. Selection menu is 30 criteria for inspection.</p>
+<p>3. For each item the door fails to pass, log the fault which be recorded on results page.</p>
+<p>4. A door could fail on more than one criteria, navigate back to the Doors page to complete the assessment see 1. above</p>
+<p>4. When the assessment for the door is complete, enter the location or idendity of the door see 1. above or go to another asset class</p>
+</div>
+<form action="/doors" method="post" enctype="multipart/form-data">
+    <input autocomplete="off" autofocus="" name="door" placeholder="Door Location &amp; Identity" type="text">
+        <br><br>
+        <select name="door_fault" class="door-fault-select">
+            <option disabled="">Door Inspection Criteria</option>
+            <option selected="" value="0">Door sound - record status &amp; image otherwise select from from drop down menu</option>
+            
+                <option value="1">Inspect to determine if the fire-resistant doorset has been modified since the previous routine service</option>
+            
+                <option value="2">Inspect door leaves  are tagged in accordance with AS 1905.1</option>
+            
+                <option value="3">Inspect  door frames are tagged in accordance with AS 1905.1</option>
+            
+                <option value="4">Inspect to ensure relevant statutory signage has been applied and that the location of the signage is in accordance with regulatory requirements</option>
+            
+                <option value="5">Check that gaps between the edge of the door leaf and the door frame are in accordance with AS 1905.1 (not more than 3mm)</option>
+            
+                <option value="6">Check that gaps between the bottom edge of the door and the floor level are in accordance with AS 1905.1 (not &lt; 3mm and not &gt;15mm)</option>
+            
+                <option value="7">Inspect all the hardware required for suspension, closing and latching is fitted and is the make and model that has been tested for that door model</option>
+            
+                <option value="8">Inspect all the hardware is located and securely attached and operational with correct fittings in accordance with AS 1905.1</option>
+            
+                <option value="9">Verify the opening and closing forces are such that the doors can be easily opened and closed in normal conditions and in fire model</option>
+            
+                <option value="10">Inspect the doorset is self-closing and self-latching if appropriate</option>
+            
+                <option value="11">Where passage sets or knobs are incorporated inspect to see that the minimum 35mm to door stop is present</option>
+            
+                <option value="12">Check closers are free from oil leaks</option>
+            
+                <option value="13">Inspect the door closer (body and arm) is free from obstruction by walls, fixtures and is operating freely throughout its swing</option>
+            
+                <option value="14">Inspect any installed door seals are approved for use in the proprietary door type, functioning as intended and are not damaged</option>
+            
+                <option value="15">Check doors for any visible delamination, buckling, warping, bowing twisting or significant damage</option>
+            
+                <option value="16">Check door edges are in good condition and free from any splitting or damage on all sides</option>
+            
+                <option value="17">Check door stop dimensions are approved for the proprietary door type and Fire Resistance Level</option>
+            
+                <option value="18">Check steel door frames are backfilled as required  for the proprietary door type and Fire Resistance Level</option>
+            
+                <option value="19">Check door frame is free from excessive distortions at any point along the frame sections</option>
+            
+                <option value="20">Check to ensure doorframe incorporates a door stiker plate</option>
+            
+                <option value="21">Check condition of frame</option>
+            
+                <option value="22">Check proprietary door type is approved for use of a vision panel</option>
+            
+                <option value="23">Check to ensure glass is approved for the proprietary door type, is in sound condition and free from cracks</option>
+            
+                <option value="24">Check to ensure perimeter trim and framing are secure and in sound condition and all fixing srews are in placeand consistent with the fire test approvals for the proprietary door type</option>
+            
+                <option value="25">Check proprietary door type is approved for use with the fire-resistant air transfer grille and is installed as per the manufactures instructions</option>
+            
+                <option value="26">Where required verify travel limiting device is installed with accordance with AS 1905.1</option>
+            
+                <option value="27">Inspect the threshold for the door leaf is free from addition of any combustible covering since installed or previous inspection</option>
+            
+                <option value="28">Inspect the kickplates are securely fixed (where fitted)</option>
+            
+                <option value="29">Inspect to ensure that meeting stile astragals are correct for the proprietary door type is installed as per manufacture's instructions, and are in good working order and incorporate seals where required</option>
+            
+                <option value="30">Test that doors held in the open position,which require activation of detection system to close, to ensure the door closes satifactorily upon power failure or detector activation</option>
+            
+                <option value="0">Door sound but want to record status and image</option>
+            
+        </select>&gt;
+        <br><br>
+    <input autocomplete="off" autofocus="" name="comment" placeholder=" Additional comment " type="text"><br>
+   <!-- Your hidden file input field -->
+    <input type="file" accept="image/*" capture="environment" id="fileInput" style="visibility: hidden; position: absolute;" onchange="updateFileName()">
+
+    <!-- Your submit button -->
+    <br><button type="submit">Log Asset Checked</button><br><br>
+    <div id="imageUrls"></div>
+        <!-- Include capture.html for capturing an image -->
+        
+
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camera and Azure Storage Example</title>
+
+
+<label for="fileInput" class="custom-file-upload">Capture Image<span id="fileName"></span></label>
+<input type="file" accept="image/*" capture="environment" id="fileInput" style="display: none;" onchange="updateFileName()" multiple="">
+<br><br><br><br>
+
+<script>
+    function updateFileName() {
+        var input = document.getElementById('fileInput');
+        var fileName = input.value.split('\\').pop();
+        document.getElementById('fileName').textContent = " - " + fileName;
+    }
+    const storageAccountName = 'firstfire';
+    const containerName = 'firedoors1';
+    sasToken = "?sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2024-06-05T14:08:47Z&st=2024-02-11T05:08:47Z&spr=https,http&sig=RXTEYfSJv1wwz9P6%2BrSJln8scy%2B15cRb8LBFDgWYPCY%3D";
+
+    async function uploadImage() {
+        console.log('uploadImage called');
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+        console.log('file:', file);
+
+        if (file) {
+            const blobName = `image_${Date.now()}.jpg`;
+            const url = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blobName}${sasToken}`;
+            
+
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'x-ms-blob-type': 'BlockBlob',
+                    'Content-Type': file.type,
+                    'x-ms-version': '2020-04-08'
+                },
+                body: file
+            });
+
+            if (response.ok) {
+                handleImageCapture(url);
+                console.log('Upload successful');
+                // Append the new URL to the imageUrl element
+                document.getElementById('imageUrl').innerText += url + '\n';
+                // Append the new URL to the imageUrlInput element
+                document.getElementById('imageUrlInput').value += url + ',';
+                // Append the new URL to the imageUrls element
+                document.getElementById('imageUrls').value += url + ',';
+            } else {
+                console.log('Upload failed:', response);
+            }
+            console.log('url:', url);
+            return url;
+        }
+    }
+
+    document.querySelector('form[action="/doors"]').addEventListener('submit', function(event) {
+        event.preventDefault();  // Prevent the form from being submitted immediately
+
+        var file = document.querySelector('input[type="file"]').files[0];
+        uploadImage(file).then(function() {
+             // Remove the trailing comma from the imageUrlInput and imageUrls values
+            document.getElementById('imageUrlInput').value = document.getElementById('imageUrlInput').value.slice(0, -1);
+            document.getElementById('imageUrls').value = document.getElementById('imageUrls').value.slice(0, -1);
+            document.getElementById('imageUrlInput').value += url + ',';
+            document.getElementById('imageUrls').value += url + ',';
+            console.log('imageUrlInput:', document.getElementById('imageUrlInput').value);
+            console.log('imageUrls:', document.getElementById('imageUrls').value);
+            
+            // Check if the form exists before trying to submit it
+            var formElement = document.querySelector('form[action="/doors"]');
+            if (formElement) {
+                formElement.submit();
+            }
+        });
+    });
+</script>
+
+<div id="imageUrl"></div>
+
+        <input type="hidden" id="imageUrlInput" name="imageUrl">
+</form>
+
+<script>
+// This script stores the viewport size in a cookie
+document.cookie = "viewportWidth=" + window.innerWidth;
+</script>
+<script src="/static/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+    console.log(document.documentElement.innerHTML);
+});
+</script>
+<script>
+// Modify the image capture code to create a new hidden input field for each image
+function handleImageCapture(files) {
+    // Process each file
+    for (var i = 0; i < files.length; i++) {
+        var file = files[i];
+        var reader = new FileReader();
+
+        reader.onloadend = function() {
+            var imageUrl = reader.result;
+
+            // Create a new hidden input field
+            var input = document.createElement("input");
+            input.type = "hidden";
+            input.name = "imageUrls";
+            input.value = imageUrl;
+
+            // Append the new input field to the div
+            document.getElementById("imageUrls").appendChild(input);
+        }
+
+        reader.readAsDataURL(file);
+    }
+}
+
+// Add an event listener to the form submission event
+document.querySelector('form[action="/doors"]').addEventListener('submit', function(event) {
+    event.preventDefault();  // Prevent the form from being submitted immediately
+
+    // Get the selected files
+    var files = document.querySelector('input[type="file"]').files;
+
+    // Call the handleImageCapture function with the selected files
+    handleImageCapture(files);
+
+    // Check if the form exists before trying to submit it
+    var formElement = document.querySelector('form[action="/doors"]');
+    if (formElement) {
+        formElement.submit();
+    }
+});
+</script>
+<div id="imageUrl"></div>
+
+
+
+    </main>
+
+    <footer class="mb-5 small text-center text-muted">
+        <!-- Data provided by <a href="https://iexcloud.io/">IEX</a> -->
+    </footer>
+    <script>
+        // This script stores the viewport size in a cookie
+        document.cookie = "viewportWidth=" + window.innerWidth;
+    </script>
+    <script src="/static/main.js"></script>
+
+
+</body>

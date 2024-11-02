@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+
+{% block title %}Report{% endblock %}
+
+{% block main %}
+<h3>Report of the defective assets for the Building {{ username }}</h3>
+<!-- Button for PDF -->
+<form action="/create_pdf" method="post">
+    <input type="submit" value="Create PDF for download">
+</form>
+<div class="content-box">
+    {% for result in results %}
+    <h4>{{result.asset}}</h4>
+    <h5>Defect: </h5>
+    <p>{{result.fault }}</p>
+    <br>
+    
+    <div class="image-container">
+        {% for url in result.image_urls %}
+            <img src="{{ url }}" alt="Image">
+        {% endfor %}
+    </div>
+    <div style="clear: both;"></div> <!-- Clear the float -->
+    <br>
+    <h5>Remedy: </h5>
+    <p>{{result.remedy }}</p> <br>
+    <br>
+    <h5>Additional Information:</h5>
+    <p>{{result.comment }}</p> <br>
+    <br>
+    <hr>
+    <br>
+    {% endfor %}
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        console.log(document.documentElement.innerHTML);
+    });
+</script>
+
+
+
+
+{% endblock %}
