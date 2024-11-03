@@ -1,59 +1,36 @@
 import os
-
-import csv
-import requests
-from PIL import Image as PilImage
-from reportlab.platypus import PageBreak
-from reportlab.platypus import BaseDocTemplate, Paragraph, Spacer, Frame, PageTemplate, Image
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from io import BytesIO
-import json
-#from mssql import MSSQL
-
 from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session, url_for, send_file, Response, jsonify
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
-from icecream import ic
-
-from helpers import apology, login_required, lookup, usd
+from functools import wraps
+from icecream import ic  # Import ic from icecream
+import pytz  # Import pytz for time zone handling
 from datetime import datetime
-import pytz
-import logging
-logging.basicConfig(level=logging.INFO)
 
-eastern_australia_tz = pytz.timezone('Australia/Sydney')
-current_time = datetime.now(eastern_australia_tz)
 # Configure application
 app = Flask(__name__)
-
-#from mssql import MSSQL
-
-# Configure MSSQL
-#mssql = MSSQL(host='fireins.database.windows.net', user='keith', password='mandy99!', database='final')
-
-db = SQL("sqlite:///final.db")
-RESULTS = {}
-
-DOOR_FAULTS = db.execute("SELECT * FROM doorfixes")
-LIGHT_FAULTS = db.execute("SELECT * FROM em_lightfixes")
-FIREEX_FAULTS = db.execute("SELECT * FROM fireExfixes")
-# Custom filter
-# app.jinja_env.filters["usd"] = usd
 
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
+app.config["SECRET_KEY"] = os.urandom(24)  # Add a secret key for session encryption
 Session(app)
 
 # Configure CS50 Library to use SQLite database
-# Need to set up some other databases for the assests and the results of the inspections
 db = SQL("sqlite:///final.db")
 
+# Define the time zone for Eastern Australia
+eastern_australia_tz = pytz.timezone('Australia/Sydney')
+current_time = datetime.now(eastern_australia_tz)
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("user_id") is None:
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.after_request
 def after_request(response):
@@ -66,44 +43,30 @@ def after_request(response):
 @app.route("/")
 @login_required
 def index():
-
-
     return render_template("index.html")
-
-
-#This is the register section from the CS50 project that I have used to register for fire inspection.
-# The building that is being inspected is "registered" to a username to be able to keep it seperate from other buildings
-# and to still be able to register other building that are saved to the same database.
-
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
-    # Forget any user _id
+    # Forget any user_id
     session.clear()
 
-    # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
-
         # Ensure username was submitted
         if not request.form.get("username"):
             return apology("must provide username", 400)
 
-       # Ensure username was submitted
-        if not request.form.get("username"):
-            return apology("must provide username", 400)
+        # Ensure password was submitted
+        if not request.form.get("password"):
+            return apology("must provide password", 400)
 
-        # # Ensure password was submitted
-        # elif not request.form.get("password"):
-        #     return apology("must provide password", 400)
+        # Ensure password confirmation was submitted
+        if not request.form.get("confirmation"):
+            return apology("must confirm password", 400)
 
-        # # Ensure password confirmation was submitted
-        # elif not request.form.get("confirmation"):
-        #     return apology("must confirm password", 400)
-
-        # # Ensure password and confirmation match
-        # elif request.form.get("password") != request.form.get("confirmation"):
-        #     return apology("must confirm password", 400)
+        # Ensure password and confirmation match
+        if request.form.get("password") != request.form.get("confirmation"):
+            return apology("passwords do not match", 400)
 
         # Query database for username
         rows = db.execute("SELECT * FROM users WHERE username = ?", request.form.get("username"))
@@ -113,17 +76,20 @@ def register():
             return apology("username already exists", 400)
 
         # Insert new user into database
-        db.execute("INSERT INTO users (username) VALUES(?)", request.form.get("username"))
+        db.execute("INSERT INTO users (username, hash) VALUES(?, ?)",
+                   request.form.get("username"),
+                   generate_password_hash(request.form.get("password")))
+
         # Query database for newly inserted user
         rows = db.execute("SELECT * FROM users WHERE username = ?", request.form.get("username"))
 
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
+        session["username"] = request.form.get("username")  # Set the username in the session
 
         # Redirect user to home page
         return redirect("/")
 
-    # User reached route via GET (as by clicking a line or via redirect)
     else:
         return render_template("register.html")
 
@@ -134,50 +100,56 @@ def login():
     # Forget any user_id
     session.clear()
 
-    # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
-
         # Ensure username was submitted
         if not request.form.get("username"):
             return apology("must provide username", 403)
 
         # Ensure password was submitted
-        #elif not request.form.get("password"):
-        #    return apology("must provide password", 403)
+        if not request.form.get("password"):
+            return apology("must provide password", 403)
 
         # Query database for username
         rows = db.execute("SELECT * FROM users WHERE username = ?", request.form.get("username"))
 
         # Ensure username exists and password is correct
-        if len(rows) != 1: #or rows[0]["hash"] != request.form.get("password"):
-            return apology("invalid username ", 403)
+        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
+            return apology("invalid username and/or password", 403)
 
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
-
-        # Remember the username
-        session["username"] = request.form.get("username")
+        session["username"] = request.form.get("username")  # Set the username in the session
 
         # Redirect user to home page
         return redirect("/")
 
-    # User reached route via GET (as by clicking a link or via redirect)
     else:
         return render_template("login.html")
-
 
 @app.route("/logout")
 def logout():
     """Log user out"""
-
     # Forget any user_id
     session.clear()
-
     # Redirect user to login form
-    return redirect("/")
+    return redirect("/login")
 
-    # Redirect user to login form
-    return redirect("/")
+@app.route("/debug/users", methods=["GET"])
+def debug_users():
+    rows = db.execute("SELECT username FROM users")
+    return jsonify(rows)
+
+def apology(message, code=400):
+    """Render message as an apology to user."""
+    def escape(s):
+        """
+        Escape special characters.
+        """
+        for old, new in [("-", "--"), (" ", "-"), ("_", "__"), ("?", "~q"), ("%", "~p"), ("#", "~h"), ("\"", "''")]:
+            s = s.replace(old, new)
+        return s
+    return render_template("apology.html", top=code, bottom=escape(message)), code
+
 
 
 # The doors function has been completed and works as expected. The other functions such as emergency lighting have
@@ -685,7 +657,7 @@ def create_pdf():
 
     return response
 
-@app.route("/debug/users", methods=["GET"])
-def debug_users():
-    rows = db.execute("SELECT username FROM users")
-    return jsonify(rows)
+
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)

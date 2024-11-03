@@ -8,7 +8,7 @@ conn = sqlite3.connect('final.db')
 c = conn.cursor()
 
 # Execute the SQL command to add a column
-c.execute("ALTER TABLE results ADD COLUMN image_url TEXT")
+c.execute("ALTER TABLE users ADD COLUMN hash TEXT")
 
 # Commit the changes and close the connection
 conn.commit()
