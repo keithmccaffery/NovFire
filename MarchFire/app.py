@@ -7,6 +7,7 @@ from functools import wraps
 from icecream import ic  # Import ic from icecream
 import pytz  # Import pytz for time zone handling
 from datetime import datetime
+from io import BytesIO
 
 # Configure application
 app = Flask(__name__)
@@ -557,7 +558,7 @@ def results():
     return render_template("results.html", results=results, username=session['username'])
 
 
-@app.route('/create_pdf', methods=['POST'])
+@app.route('/create_pdf', methods=['GET', 'POST', 'HEAD'])
 def create_pdf():
      # Create the flowables list
     flowables = []
