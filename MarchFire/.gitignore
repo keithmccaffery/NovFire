@@ -1,0 +1,14 @@
+# Ignore the SQLite database file
+final.db
+
+# Ignore Python virtual environment directories
+venv/
+__pycache__/
+
+# Ignore other common files and directories
+*.pyc
+*.pyo
+*.pyd
+*.swp
+.DS_Store
+.env
