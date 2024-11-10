@@ -51,7 +51,7 @@ def after_request(response):
 @app.route("/")
 @login_required
 def index():
-    return render_template("index.html")
+    return render_template("index.html", username=session.get("username"))
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -110,23 +110,30 @@ def login():
 
     if request.method == "POST":
         # Ensure username was submitted
-        if not request.form.get("username"):
+        username = request.form.get("username")
+        password = request.form.get("password")
+        if not username:
+            print("No username provided")
             return apology("must provide username", 403)
 
         # Ensure password was submitted
-        if not request.form.get("password"):
+        if not password:
+            print("No password provided")
             return apology("must provide password", 403)
 
         # Query database for username
-        rows = db.execute("SELECT * FROM users WHERE username = ?", request.form.get("username"))
+        rows = db.execute("SELECT * FROM users WHERE username = ?", username)
+        print(f"Queried database for username: {username}, found rows: {rows}")
 
         # Ensure username exists and password is correct
-        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
+        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], password):
+            print("Invalid username and/or password")
             return apology("invalid username and/or password", 403)
 
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
-        session["username"] = request.form.get("username")  # Set the username in the session
+        session["username"] = username  # Set the username in the session
+        print(f"User logged in: {username}, user_id: {session['user_id']}")
 
         # Redirect user to home page
         return redirect("/")
@@ -157,6 +164,13 @@ def apology(message, code=400):
             s = s.replace(old, new)
         return s
     return render_template("apology.html", top=code, bottom=escape(message)), code
+
+
+
+
+# if __name__ == '__main__':
+#     app.run(debug=True, port=5000, use_reloader=False)
+
 
 
 
@@ -661,7 +675,8 @@ def create_pdf():
 
     return response
 
-
-
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True, port=5000, use_reloader=False)
+
+#if __name__ == '__main__':
+#   app.run()
