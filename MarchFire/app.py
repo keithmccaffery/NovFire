@@ -8,6 +8,13 @@ from icecream import ic  # Import ic from icecream
 import pytz  # Import pytz for time zone handling
 from datetime import datetime
 from io import BytesIO
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Frame, PageTemplate
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import BaseDocTemplate
+from reportlab.platypus import Image as ReportLabImage
+from reportlab.lib.styles import getSampleStyleSheet
+from PIL import Image as PilImage  # Importing PIL Image
+import requests  # Ensure requests is imported
 
 # Configure application
 app = Flask(__name__)
@@ -558,32 +565,48 @@ def results():
     return render_template("results.html", results=results, username=session['username'])
 
 
-@app.route('/create_pdf', methods=['GET', 'POST', 'HEAD'])
-def create_pdf():
-     # Create the flowables list
-    flowables = []
-    # Fetch the data from the database
-    results = db.execute("""
-    SELECT results.*, images.image_url 
-    FROM results 
-    LEFT JOIN images ON results.id = images.result_id 
-    WHERE results.user_id = :user_id 
-    ORDER BY results.timestamp DESC 
-    LIMIT 10
-    """, 
-    user_id=session["user_id"]
-)
+from io import BytesIO
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Frame, PageTemplate
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import BaseDocTemplate
+from reportlab.platypus import Image as ReportLabImage
+from reportlab.lib.styles import getSampleStyleSheet
+from PIL import Image as PilImage
+import requests
 
-    for result in results:
-        if result['image_url']:
-            # Print the image URL
-            print(f"Image URL: {result['image_url']}")
-            # Reduce the width of the image
-            #img = Image(result['image_url'], width=200)  # Reduced from 400 to 300
-           
-        else:
-            print(f"Warning: Empty image URL for result {result['id']}")
-            # Skip adding an image to the PDF
+@app.route("/create_pdf", methods=["POST"])
+@login_required
+def create_pdf():
+    # Create a file-like buffer to receive PDF data
+    buffer = BytesIO()
+
+    # Create the PDF object, using the buffer as its "file"
+    doc = BaseDocTemplate(buffer, pagesize=A4)
+
+    # Create a Frame with a specified width and start position
+    frame = Frame(50, 50, A4[0]-100, A4[1]-100)  # Adjust the x, y, width, and height as needed
+
+    # Create a custom PageTemplate that uses the Frame
+    template = PageTemplate(frames=[frame])
+    # Add the custom PageTemplate to the BaseDocTemplate
+    doc.addPageTemplates([template])
+
+    # Create a Paragraph
+    styles = getSampleStyleSheet()
+
+    # Query database for user's results, ordered by the most recent first
+    results = db.execute(
+        """
+        SELECT results.*, images.image_url 
+        FROM results 
+        LEFT JOIN images ON results.id = images.result_id 
+        WHERE results.user_id = :user_id 
+        ORDER BY results.timestamp DESC 
+        LIMIT 10
+        """, 
+        user_id=session["user_id"]
+    )
+
     # Group results by result_id, each result will have a list of image_urls
     grouped_results = {}
     for result in results:
@@ -592,34 +615,9 @@ def create_pdf():
             grouped_results[result['id']]['image_urls'] = []
         grouped_results[result['id']]['image_urls'].append(result['image_url'])
 
-    # Create a file-like buffer to receive PDF data
-    buffer = BytesIO()
-    # class MyPageTemplate(PageTemplate):
-    #     def afterDrawPage(self, canvas, doc):
-    #         # Draw horizontal rulers
-    #         for i in range(int(A4[0])):
-    #             if i % 50 == 0:
-    #                 canvas.drawString(i, A4[1] - 10, str(i))
-    # Create the PDF object, using the buffer as its "file"
-    doc = BaseDocTemplate(buffer, pagesize=A4)
+    flowables = []
 
-    # Create a Frame with a specified width and start position
-    frame = Frame(50, 50, A4[0]-100, A4[1]-100)  # Adjust the x, y, width, and height as needed
-
-
-    # Create a custom PageTemplate that uses the Frame
-    #template = MyPageTemplate(frames=[frame])
-    template = PageTemplate(frames=[frame])
-    # Add the custom PageTemplate to the BaseDocTemplate
-    doc.addPageTemplates([template])
-
-
-    # Create a Paragraph
-    styles = getSampleStyleSheet()
-
-    print(grouped_results)
-
-# Add the flowables for each result
+    # Add the flowables for each result
     for result_id, result in grouped_results.items():
         keys = ['asset', 'fault_id', 'fault', 'remedy', 'comment']
         for key in keys:
@@ -629,22 +627,27 @@ def create_pdf():
             flowables.append(paragraph)
         flowables.append(Spacer(1, 20))
 
-        # Add images for each result
-        for image_url in result.get('image_urls', []):
-            if not image_url:  # Skip if the URL is empty
-                continue
-            # Open the image with PIL to get its size
-            pil_image = PilImage.open(requests.get(image_url, stream=True).raw)
-            original_width, original_height = pil_image.size
-
-            # Calculate the new height based on the aspect ratio
-            new_width = 250
-            new_height = (new_width / original_width) * original_height
-
-            # Create the Image object with the new width and height
-            image = Image(image_url, width=new_width, height=new_height)
-            flowables.append(image)
-            flowables.append(Spacer(1, 20))
+        # Handle image URLs
+        image_urls = result.get('image_urls', [])
+        for image_url in image_urls:
+            if image_url:
+                print(f"Processing image URL: {image_url}")  # Log the image URL
+                try:
+                    response = requests.get(image_url, stream=True)
+                    response.raise_for_status()  # Raise an error for bad status codes
+                    image_data = response.content
+                    pil_image = PilImage.open(BytesIO(image_data))
+                    pil_image.verify()  # Verify that it is an image
+                    pil_image = PilImage.open(BytesIO(image_data))  # Reopen the image after verification
+                    image = ReportLabImage(BytesIO(image_data), width=200, height=200)
+                    flowables.append(image)
+                    print(f"Image added to PDF: {image_url}")  # Log success
+                except requests.exceptions.RequestException as e:
+                    print(f"Error downloading image: {e}")
+                except PilImage.UnidentifiedImageError as e:
+                    print(f"Error identifying image: {e}")
+                except Exception as e:
+                    print(f"Unexpected error: {e}")
 
     # Build the PDF
     doc.build(flowables)
