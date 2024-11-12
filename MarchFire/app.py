@@ -27,6 +27,11 @@ Session(app)
 
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///final.db")
+RESULTS = {}
+
+DOOR_FAULTS = db.execute("SELECT * FROM doorfixes")
+LIGHT_FAULTS = db.execute("SELECT * FROM em_lightfixes")
+FIREEX_FAULTS = db.execute("SELECT * FROM fireExfixes")
 
 # Define the time zone for Eastern Australia
 eastern_australia_tz = pytz.timezone('Australia/Sydney')
