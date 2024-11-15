@@ -40,7 +40,9 @@
                 {% endfor %}
             </select>
 			<br><br>
-        <input autocomplete="off" autofocus name="comment" placeholder=" Additional comment " type="text"><br>
+            <textarea autocomplete="off" autofocus name="comment" id="comment" placeholder=" Additional comment " rows="4" cols="50"></textarea><br>
+            <button type="button" onclick="startSpeechRecognition()">Speak</button>
+            <button type="button" onclick="stopSpeechRecognition()">Stop</button><br>
         <!-- Your hidden file input field -->
         <input type="file" accept="image/*" capture="environment" id="fileInput" style="visibility: hidden; position: absolute;" onchange="updateFileName()">
 
@@ -51,7 +53,47 @@
             {% include 'captureD.html' %}
             <input type="hidden" id="imageUrlInput" name="imageUrl">
     </form>
+    <script>
+        let recognition;
+        let isRecognizing = false;
 
+        function startSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.lang = 'en-US';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+
+                recognition.onresult = function(event) {
+                    const commentField = document.getElementById('comment');
+                    commentField.value += ' ' + event.results[0][0].transcript;
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error', event);
+                };
+
+                recognition.onend = function() {
+                    if (isRecognizing) {
+                        recognition.start();
+                    }
+                };
+
+                recognition.start();
+                isRecognizing = true;
+            } else {
+                alert('Speech recognition not supported in this browser.');
+            }
+        }
+
+        function stopSpeechRecognition() {
+            if (recognition) {
+                isRecognizing = false;
+                recognition.stop();
+            }
+        }
+    </script>
     <script>
     // This script stores the viewport size in a cookie
     document.cookie = "viewportWidth=" + window.innerWidth;

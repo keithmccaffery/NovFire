@@ -15,6 +15,8 @@ from reportlab.platypus import Image as ReportLabImage
 from reportlab.lib.styles import getSampleStyleSheet
 from PIL import Image as PilImage  # Importing PIL Image
 import requests  # Ensure requests is imported
+import logging
+import sys
 
 # Configure application
 app = Flask(__name__)
@@ -36,6 +38,9 @@ FIREEX_FAULTS = db.execute("SELECT * FROM fireExfixes")
 # Define the time zone for Eastern Australia
 eastern_australia_tz = pytz.timezone('Australia/Sydney')
 current_time = datetime.now(eastern_australia_tz)
+
+# Configure logging to stdout
+logging.basicConfig(level=logging.DEBUG, handlers=[logging.StreamHandler(sys.stdout)])
 
 def login_required(f):
     @wraps(f)
