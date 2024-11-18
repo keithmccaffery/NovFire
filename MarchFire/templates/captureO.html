@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camera and Azure Storage Example</title>
+    <title>Capture Image</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/compressorjs@1.0.7/dist/compressor.min.js"></script>
 </head>
 <body>
     <label for="fileInput" class="custom-file-upload">Capture Image<span id="fileName"></span></label>
@@ -17,9 +19,28 @@
             var fileName = input.value.split('\\').pop();
             document.getElementById('fileName').textContent = " - " + fileName;
         }
+
         const storageAccountName = 'firstfire';
         const containerName = 'firedoors1';
-        sasToken = "?sv=2022-11-02&ss=bfqt&srt=o&sp=rwdlacupiytfx&se=2025-05-01T11:30:24Z&st=2024-11-03T02:30:24Z&spr=https&sig=3uRVgEz%2BaObXlwv3iR%2FRHM73GZHmVQHBcH0wtGFOFnc%3D";
+        const sasToken = "?sv=2022-11-02&ss=bfqt&srt=o&sp=rwdlacupiytfx&se=2025-05-01T11:30:24Z&st=2024-11-03T02:30:24Z&spr=https&sig=3uRVgEz%2BaObXlwv3iR%2FRHM73GZHmVQHBcH0wtGFOFnc%3D";
+
+        document.getElementById('fileInput').addEventListener('change', async function() {
+            const file = this.files[0];
+            if (file) {
+                console.log('Original file size:', file.size);
+                // Compress the image
+                new Compressor(file, {
+                    quality: 0.6,
+                    success(result) {
+                        console.log('Compressed file size:', result.size);
+                        uploadImage(result);
+                    },
+                    error(err) {
+                        console.error('Image compression error:', err);
+                    },
+                });
+            }
+        });
 
         // Asynchronously uploads an image file to a specified URL using fetch API with error handling and logging.
         async function uploadImage(file) {
@@ -29,74 +50,36 @@
             if (file) {
                 const blobName = `image_${Date.now()}.jpg`;
                 const url = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blobName}${sasToken}`;
+                console.log('Upload URL:', url);
+                const options = {
+                    method: 'PUT',
+                    headers: {
+                        'x-ms-blob-type': 'BlockBlob',
+                        'Content-Type': file.type,
+                    },
+                    body: file,
+                };
 
                 try {
-                    const response = await fetch(url, {
-                        method: 'PUT',
-                        headers: {
-                            'x-ms-blob-type': 'BlockBlob',
-                            'Content-Type': file.type,
-                            'x-ms-version': '2020-04-08'
-                        },
-                        body: file
-                    });
-
+                    document.getElementById('fileName').textContent = 'Uploading...';
+                    const response = await fetch(url, options);
                     if (response.ok) {
-                        console.log('Upload successful');
-                        document.getElementById('imageUrl').innerText = url;
-                        document.getElementById('imageUrlInput').value = url;    
+                        document.getElementById('fileName').textContent = `Uploaded: ${blobName}`;
+                        console.log('Image uploaded successfully:', blobName);
+                        // Set the image URL in a hidden input field
+                        document.getElementById('imageUrlInput').value = url;
                     } else {
-                        console.log('Upload failed:', response);
-                        throw new Error('Upload failed');
+                        document.getElementById('fileName').textContent = 'Upload failed';
+                        console.error('Upload failed:', response.statusText);
                     }
-                    console.log('url:', url);
-                    return url;
-                    } catch (error) {
-                        console.error('Error during fetch:', error);
-                    }
-                    }
-                    }
-                    document.querySelector('form[action="/other"]').addEventListener('submit', function(event) {
-                        event.preventDefault();  // Prevent the form from being submitted immediately
-                        console.log('form submitted');
-                    });
-
-                    
-                    var file;
-                    var uploadedImageUrls = [];
-
-                    document.querySelector('input[type="file"]').addEventListener('change', function(event) {
-                        file = event.target.files[0];
-                        console.log('file:', file);
-                        uploadImage(file).then(function(url) {
-                            // Add the URL of the uploaded image to the array
-                            uploadedImageUrls.push(url);
-                            console.log('Image uploaded, URL:', url);
-                        });
-                    });
-
-                    document.querySelector('form[action="/other"]').addEventListener('submit', function(event) {
-                        event.preventDefault();  // Prevent the form from being submitted immediately
-                        console.log('form submitted');
-
-                        // Get the imageUrlInput and imageUrls elements
-                        var imageUrlInput = document.getElementById('imageUrlInput');
-                        var imageUrls = document.getElementById('imageUrls');
-
-                        // Join the elements of the array into a string, with each URL separated by a comma
-                        var imageUrlString = uploadedImageUrls.join(';');
-
-                        console.log('Image URLs:', imageUrlString);
-                        if (imageUrlInput) {
-                            imageUrlInput.value = imageUrlString;
-                        }
-                        if (imageUrls) {
-                            imageUrls.value = imageUrlString;
-                        }
-                    });
-
-                    
+                } catch (error) {
+                    document.getElementById('fileName').textContent = 'Upload error';
+                    console.error('Upload error:', error);
+                }
+            }
+        }
     </script>
 </body>
+
 <div id="imageUrl"></div>
 </html>
