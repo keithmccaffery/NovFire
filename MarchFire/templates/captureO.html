@@ -9,11 +9,10 @@
 </head>
 <body>
     <label for="fileInput" class="custom-file-upload">Capture Image<span id="fileName"></span></label>
-    <input type="file" accept="image/*" capture="environment" id="fileInput" style="display: none;" onchange="updateFileName()" multiple>
+    <input type="file" accept="image/*" capture="environment" id="fileInput" style="display: none;" onchange="updateFileName()">
     <br><br><br><br>
 
     <script>
-        // Updates the file name displayed on the webpage based on the selected file input.
         function updateFileName() {
             var input = document.getElementById('fileInput');
             var fileName = input.value.split('\\').pop();
