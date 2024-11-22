@@ -6,15 +6,18 @@
     <title>Camera and Azure Storage Example</title>
 </head>
 <body>
-    <label for="fileInput" class="custom-file-upload">Capture Image<span id="fileName"></span></label>
-    <input type="file" accept="image/*" capture="environment" id="fileInput" style="display: none;" onchange="updateFileName()" multiple>
+    <label for="cameraInput" class="custom-file-upload">Capture Image with Camera<span id="cameraFileName"></span></label>
+    <input type="file" accept="image/*" capture="environment" id="cameraInput" style="display: none;" onchange="handleFiles(this.files)" multiple>
+    <br><br>
+    <label for="fileInput" class="custom-file-upload">Select Image from Photo Library<span id="fileName"></span></label>
+    <input type="file" accept="image/*" id="fileInput" style="display: none;" onchange="handleFiles(this.files)" multiple>
     <br><br><br><br>
 
     <script>
-        function updateFileName() {
-            var input = document.getElementById('fileInput');
+        function updateFileName(inputId, fileNameId) {
+            var input = document.getElementById(inputId);
             var fileName = input.value.split('\\').pop();
-            document.getElementById('fileName').textContent = " - " + fileName;
+            document.getElementById(fileNameId).textContent = " - " + fileName;
         }
 
         const storageAccountName = 'firstfire';
@@ -64,17 +67,19 @@
         var file;
         var uploadedImageUrls = [];
 
-        document.querySelector('input[type="file"]').addEventListener('change', function(event) {
-            const files = event.target.files;
-            for (let file of files) {
-                console.log('file:', file);
-                uploadImage(file).then(function(url) {
-                    // Add the URL of the uploaded image to the array
-                    uploadedImageUrls.push(url);
-                    console.log('Image uploaded, URL:', url);
-                    updateImageUrlsDisplay();
-                });
-            }
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', function(event) {
+                const files = event.target.files;
+                for (let file of files) {
+                    console.log('file:', file);
+                    uploadImage(file).then(function(url) {
+                        // Add the URL of the uploaded image to the array
+                        uploadedImageUrls.push(url);
+                        console.log('Image uploaded, URL:', url);
+                        updateImageUrlsDisplay();
+                    });
+                }
+            });
         });
 
         function updateImageUrlsDisplay() {
