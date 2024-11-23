@@ -685,8 +685,73 @@ def create_pdf():
 
     return response
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000, use_reloader=False)
+from docx import Document
+from docx.shared import Inches
+import requests
 
-#if __name__ == '__main__':
-#   app.run()
+from flask import send_file
+
+@app.route("/create_word", methods=["POST"])
+@login_required
+def create_word():
+    user_id = session["user_id"]
+    document_path = create_word_report(user_id)
+    return send_file(document_path, as_attachment=True)
+
+def create_word_report(user_id):
+    # Query the database to get the results and images
+    results = db.execute("""
+        SELECT results.*, images.image_url 
+        FROM results 
+        LEFT JOIN images ON results.id = images.result_id 
+        WHERE results.user_id = :user_id 
+        ORDER BY results.timestamp DESC 
+        LIMIT 10
+        """, 
+        user_id=user_id
+    )
+
+    # Group results by result_id, each result will have a list of image_urls
+    grouped_results = {}
+    for result in results:
+        if result['id'] not in grouped_results:
+            grouped_results[result['id']] = result
+            grouped_results[result['id']]['image_urls'] = []
+        grouped_results[result['id']]['image_urls'].append(result['image_url'])
+
+    # Create a new Word document
+    document = Document()
+    document.add_heading('Inspection Report', 0)
+
+    # Add the results to the document
+    for result_id, result in grouped_results.items():
+        keys = ['asset', 'fault_id', 'fault', 'remedy', 'comment']
+        for key in keys:
+            text = f"{key.capitalize()}: {result[key]}"
+            document.add_paragraph(text)
+        document.add_paragraph('')
+
+        # Handle image URLs
+        image_urls = result.get('image_urls', [])
+        for image_url in image_urls:
+            if image_url:
+                print(f"Processing image URL: {image_url}")  # Log the image URL
+                try:
+                    response = requests.get(image_url, stream=True)
+                    if response.status_code == 200:
+                        image_path = f"temp_image_{result_id}.jpg"
+                        with open(image_path, 'wb') as f:
+                            for chunk in response.iter_content(1024):
+                                f.write(chunk)
+                        document.add_picture(image_path, width=Inches(4))
+                        document.add_paragraph('')
+                except Exception as e:
+                    print(f"Error processing image URL {image_url}: {e}")
+
+    # Save the document
+    document_path = f"inspection_report_{user_id}.docx"
+    document.save(document_path)
+    return document_path
+
+if __name__ == '__main__':
+   app.run()

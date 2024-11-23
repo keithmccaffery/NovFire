@@ -8,6 +8,11 @@
 <form action="/create_pdf" method="post">
     <input type="submit" value="Create PDF for download">
 </form>
+<!-- New button to create Word document -->
+<form action="/create_word" method="post">
+    <button type="submit">Create Word Document</button>
+</form>
+
 <div class="content-box">
     {% for result in results %}
     <h4>{{result.asset}}</h4>
