@@ -4,20 +4,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Camera and Azure Storage Example</title>
+    <style>
+        .thumbnail {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            margin: 5px;
+            border: 1px solid #ddd;
+        }
+        .thumbnail-container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .thumbnail-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .remove-button {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <label for="cameraInput" class="custom-file-upload">Capture Image with Camera<span id="cameraFileName"></span></label>
-    <input type="file" accept="image/*" capture="environment" id="cameraInput" style="display: none;" onchange="handleFiles(this.files)" multiple>
+    <input type="file" accept="image/*" capture="environment" id="cameraInput" style="display: none;" onchange="handleFiles(this.files); updateFileName('cameraInput', 'cameraFileName');" multiple>
     <br><br>
     <label for="fileInput" class="custom-file-upload">Select Image from Photo Library<span id="fileName"></span></label>
-    <input type="file" accept="image/*" id="fileInput" style="display: none;" onchange="handleFiles(this.files)" multiple>
+    <input type="file" accept="image/*" id="fileInput" style="display: none;" onchange="handleFiles(this.files); updateFileName('fileInput', 'fileName');" multiple>
     <br><br><br><br>
 
+    <div class="thumbnail-container" id="thumbnailContainer"></div>
+
     <script>
+        let uploadedImageUrls = [];
+        let imageFiles = [];
+
         function updateFileName(inputId, fileNameId) {
             var input = document.getElementById(inputId);
+            if (!input) {
+                console.error('Element with ID', inputId, 'not found');
+                return;
+            }
             var fileName = input.value.split('\\').pop();
-            document.getElementById(fileNameId).textContent = " - " + fileName;
+            var fileNameElement = document.getElementById(fileNameId);
+            if (fileNameElement) {
+                fileNameElement.textContent = " - " + fileName;
+            } else {
+                console.error('Element with ID', fileNameId, 'not found');
+            }
+        }
+
+        function handleFiles(files) {
+            for (let file of files) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const imageUrl = event.target.result;
+                    displayThumbnail(imageUrl, file);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function displayThumbnail(imageUrl, file) {
+            const container = document.getElementById('thumbnailContainer');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'thumbnail-wrapper';
+
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.className = 'thumbnail';
+
+            const button = document.createElement('button');
+            button.className = 'remove-button';
+            button.innerText = 'X';
+            button.onclick = function() {
+                container.removeChild(wrapper);
+                const index = imageFiles.indexOf(file);
+                if (index > -1) {
+                    imageFiles.splice(index, 1);
+                    uploadedImageUrls.splice(index, 1);
+                }
+            };
+
+            wrapper.appendChild(img);
+            wrapper.appendChild(button);
+            container.appendChild(wrapper);
+
+            imageFiles.push(file);
+            uploadImage(file).then(url => {
+                uploadedImageUrls.push(url);
+            });
         }
 
         const storageAccountName = 'firstfire';
@@ -25,89 +107,40 @@
         const sasToken = "?sv=2022-11-02&ss=bfqt&srt=o&sp=rwdlacupiytfx&se=2025-05-01T11:30:24Z&st=2024-11-03T02:30:24Z&spr=https&sig=3uRVgEz%2BaObXlwv3iR%2FRHM73GZHmVQHBcH0wtGFOFnc%3D";
 
         async function uploadImage(file) {
-            console.log('uploadImage called');
-            console.log('file:', file);
+            const blobName = `image_${Date.now()}.jpg`;
+            const url = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blobName}${sasToken}`;
 
-            if (file) {
-                const blobName = `image_${Date.now()}.jpg`;
-                const url = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blobName}${sasToken}`;
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'x-ms-blob-type': 'BlockBlob',
+                        'Content-Type': file.type,
+                        'x-ms-version': '2020-04-08'
+                    },
+                    body: file
+                });
 
-                try {
-                    const response = await fetch(url, {
-                        method: 'PUT',
-                        headers: {
-                            'x-ms-blob-type': 'BlockBlob',
-                            'Content-Type': file.type,
-                            'x-ms-version': '2020-04-08'
-                        },
-                        body: file
-                    });
-
-                    if (response.ok) {
-                        console.log('Upload successful');
-                        document.getElementById('imageUrl').innerText = url;
-                        document.getElementById('imageUrlInput').value = url;    
-                    } else {
-                        console.log('Upload failed:', response);
-                        throw new Error('Upload failed');
-                    }
-                    console.log('url:', url);
+                if (response.ok) {
                     return url;
-                } catch (error) {
-                    console.error('Error during fetch:', error);
+                } else {
+                    throw new Error('Upload failed');
                 }
+            } catch (error) {
+                console.error('Error during fetch:', error);
             }
         }
 
         document.querySelector('form[action="/fire_ext"]').addEventListener('submit', function(event) {
-            event.preventDefault();  // Prevent the form from being submitted immediately
-            console.log('form submitted');
-        });
-
-        var file;
-        var uploadedImageUrls = [];
-
-        document.querySelectorAll('input[type="file"]').forEach(input => {
-            input.addEventListener('change', function(event) {
-                const files = event.target.files;
-                for (let file of files) {
-                    console.log('file:', file);
-                    uploadImage(file).then(function(url) {
-                        // Add the URL of the uploaded image to the array
-                        uploadedImageUrls.push(url);
-                        console.log('Image uploaded, URL:', url);
-                        updateImageUrlsDisplay();
-                    });
-                }
-            });
-        });
-
-        function updateImageUrlsDisplay() {
-            document.getElementById('imageUrls').innerHTML = uploadedImageUrls.map(url => `<li>${url}</li>`).join('');
-        }
-
-        document.querySelector('form[action="/fire_ext"]').addEventListener('submit', function(event) {
-            event.preventDefault();  // Prevent the form from being submitted immediately
-            console.log('form submitted');
-
-            // Get the imageUrlInput and imageUrls elements
-            var imageUrlInput = document.getElementById('imageUrlInput');
-            var imageUrls = document.getElementById('imageUrls');
-
-            // Join the elements of the array into a string, with each URL separated by a comma
-            var imageUrlString = uploadedImageUrls.join(';');
-
-            console.log('Image URLs:', imageUrlString);
-            if (imageUrlInput) {
-                imageUrlInput.value = imageUrlString;
-            }
-            if (imageUrls) {
-                imageUrls.value = imageUrlString;
-            }
-
+            event.preventDefault();
+            const imageUrlInput = document.getElementById('imageUrlInput');
+            imageUrlInput.value = uploadedImageUrls.join(';');
             this.submit();
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM fully loaded and parsed');
         });
     </script>
 </body>
-<div id="imageUrl"></div>
 </html>
