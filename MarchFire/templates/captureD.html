@@ -30,6 +30,8 @@
             cursor: pointer;
         }
     </style>
+    <!-- Include Compressor.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/compressorjs@1.0.7/dist/compressor.min.js"></script>
 </head>
 <body>
     <label for="cameraInput" class="custom-file-upload">Capture Image with Camera<span id="cameraFileName"></span></label>
@@ -62,12 +64,23 @@
 
         function handleFiles(files) {
             for (let file of files) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const imageUrl = event.target.result;
-                    displayThumbnail(imageUrl, file);
-                };
-                reader.readAsDataURL(file);
+                console.log('Original file size:', file.size);
+                // Compress the image
+                new Compressor(file, {
+                    quality: 0.4,
+                    success(result) {
+                        console.log('Compressed file size:', result.size);
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            const imageUrl = event.target.result;
+                            displayThumbnail(imageUrl, result);
+                        };
+                        reader.readAsDataURL(result);
+                    },
+                    error(err) {
+                        console.error('Image compression error:', err);
+                    },
+                });
             }
         }
 
