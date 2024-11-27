@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camera and Azure Storage Example</title>
+    <title>Capture Image and Upload to Azure Blob Storage</title>
     <style>
         .thumbnail {
             width: 100px;
@@ -67,7 +67,7 @@
                 console.log('Original file size:', file.size);
                 // Compress the image
                 new Compressor(file, {
-                    quality: 0.4,
+                    quality: 0.6,
                     success(result) {
                         console.log('Compressed file size:', result.size);
                         const reader = new FileReader();
@@ -112,6 +112,9 @@
             imageFiles.push(file);
             uploadImage(file).then(url => {
                 uploadedImageUrls.push(url);
+            }).catch(error => {
+                console.error('Upload failed:', error);
+                alert('Failed to upload image. Please try again.');
             });
         }
 
@@ -119,7 +122,7 @@
         const containerName = 'firedoors1';
         const sasToken = "?sv=2022-11-02&ss=bfqt&srt=o&sp=rwdlacupiytfx&se=2025-05-01T11:30:24Z&st=2024-11-03T02:30:24Z&spr=https&sig=3uRVgEz%2BaObXlwv3iR%2FRHM73GZHmVQHBcH0wtGFOFnc%3D";
 
-        async function uploadImage(file) {
+        async function uploadImage(file, retries = 3) {
             const blobName = `image_${Date.now()}.jpg`;
             const url = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blobName}${sasToken}`;
 
@@ -135,12 +138,19 @@
                 });
 
                 if (response.ok) {
+                    console.log('Upload successful:', url);
                     return url;
                 } else {
                     throw new Error('Upload failed');
                 }
             } catch (error) {
                 console.error('Error during fetch:', error);
+                if (retries > 0) {
+                    console.log(`Retrying upload... (${retries} retries left)`);
+                    return uploadImage(file, retries - 1);
+                } else {
+                    throw error;
+                }
             }
         }
 
