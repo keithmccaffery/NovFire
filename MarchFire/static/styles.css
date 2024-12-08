@@ -58,10 +58,10 @@ nav .navbar-brand .green
     margin: 4px 2px;
     transition-duration: 0.4s;
 }
-
 .custom-file-upload:hover {
     background-color: #45a049;
 }
+
 .image-container {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -78,4 +78,18 @@ nav .navbar-brand .green
     .image-container img {
         width: 90%; /* smaller width on large screens */
     }
+}
+
+/* Add styles for media-container */
+.media-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-auto-rows: min-content;
+    gap: 10px;
+}
+
+.media-container img,
+.media-container video {
+    width: 100%;
+    height: auto;
 }

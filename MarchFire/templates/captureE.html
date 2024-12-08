@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Capture Image and Upload to Azure Blob Storage</title>
+    <title>Capture Image and Video and Upload to Azure Blob Storage</title>
     <style>
         .thumbnail {
             width: 100px;
@@ -35,17 +35,25 @@
 </head>
 <body>
     <label for="cameraInput" class="custom-file-upload">Capture Image with Camera<span id="cameraFileName"></span></label>
-    <input type="file" accept="image/*" capture="environment" id="cameraInput" style="display: none;" onchange="handleFiles(this.files); updateFileName('cameraInput', 'cameraFileName');" multiple>
+    <input type="file" accept="image/*" capture="environment" id="cameraInput" style="display: none;" onchange="handleFiles(this.files, 'image'); updateFileName('cameraInput', 'cameraFileName');" multiple>
     <br><br>
-    <label for="fileInput" class="custom-file-upload">Select Image from Photo Library<span id="fileName"></span></label>
-    <input type="file" accept="image/*" id="fileInput" style="display: none;" onchange="handleFiles(this.files); updateFileName('fileInput', 'fileName');" multiple>
+    <label for="videoInput" class="custom-file-upload">Capture Video with Camera<span id="videoFileName"></span></label>
+    <input type="file" accept="video/*" capture="environment" id="videoInput" style="display: none;" onchange="handleFiles(this.files, 'video'); updateFileName('videoInput', 'videoFileName');" multiple>
+    <br><br>
+    <label for="fileInput" class="custom-file-upload">Select Image or Video from Library<span id="fileName"></span></label>
+    <input type="file" accept="image/*,video/*" id="fileInput" style="display: none;" onchange="handleFiles(this.files); updateFileName('fileInput', 'fileName');" multiple>
     <br><br><br><br>
 
     <div class="thumbnail-container" id="thumbnailContainer"></div>
 
+    <form action="/other" method="POST">
+        <input type="hidden" id="imageUrlInput" name="imageUrl">
+        <button type="submit">Log Asset Checked</button>
+    </form>
+
     <script>
-        let uploadedImageUrls = [];
-        let imageFiles = [];
+        let uploadedMediaUrls = [];
+        let mediaFiles = [];
 
         function updateFileName(inputId, fileNameId) {
             var input = document.getElementById(inputId);
@@ -62,59 +70,78 @@
             }
         }
 
-        function handleFiles(files) {
+        function handleFiles(files, type) {
             for (let file of files) {
                 console.log('Original file size:', file.size);
-                // Compress the image
-                new Compressor(file, {
-                    quality: 0.6,
-                    success(result) {
-                        console.log('Compressed file size:', result.size);
-                        const reader = new FileReader();
-                        reader.onload = function(event) {
-                            const imageUrl = event.target.result;
-                            displayThumbnail(imageUrl, result);
-                        };
-                        reader.readAsDataURL(result);
-                    },
-                    error(err) {
-                        console.error('Image compression error:', err);
-                    },
-                });
+                if (type === 'image' || file.type.startsWith('image/')) {
+                    // Compress the image
+                    new Compressor(file, {
+                        quality: 0.6,
+                        success(result) {
+                            console.log('Compressed file size:', result.size);
+                            const reader = new FileReader();
+                            reader.onload = function(event) {
+                                const imageUrl = event.target.result;
+                                displayThumbnail(imageUrl, result, 'image');
+                            };
+                            reader.readAsDataURL(result);
+                        },
+                        error(err) {
+                            console.error('Image compression error:', err);
+                        },
+                    });
+                } else if (type === 'video' || file.type.startsWith('video/')) {
+                    // Handle video file
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const videoUrl = event.target.result;
+                        displayThumbnail(videoUrl, file, 'video');
+                    };
+                    reader.readAsDataURL(file);
+                }
             }
         }
 
-        function displayThumbnail(imageUrl, file) {
+        function displayThumbnail(mediaUrl, file, type) {
             const container = document.getElementById('thumbnailContainer');
             const wrapper = document.createElement('div');
             wrapper.className = 'thumbnail-wrapper';
 
-            const img = document.createElement('img');
-            img.src = imageUrl;
-            img.className = 'thumbnail';
+            let mediaElement;
+            if (type === 'image') {
+                mediaElement = document.createElement('img');
+                mediaElement.src = mediaUrl;
+                mediaElement.className = 'thumbnail';
+            } else if (type === 'video') {
+                mediaElement = document.createElement('video');
+                mediaElement.src = mediaUrl;
+                mediaElement.className = 'thumbnail';
+                mediaElement.controls = true;
+            }
 
             const button = document.createElement('button');
             button.className = 'remove-button';
             button.innerText = 'X';
             button.onclick = function() {
                 container.removeChild(wrapper);
-                const index = imageFiles.indexOf(file);
+                const index = mediaFiles.indexOf(file);
                 if (index > -1) {
-                    imageFiles.splice(index, 1);
-                    uploadedImageUrls.splice(index, 1);
+                    mediaFiles.splice(index, 1);
+                    uploadedMediaUrls.splice(index, 1);
                 }
             };
 
-            wrapper.appendChild(img);
+            wrapper.appendChild(mediaElement);
             wrapper.appendChild(button);
             container.appendChild(wrapper);
 
-            imageFiles.push(file);
-            uploadImage(file).then(url => {
-                uploadedImageUrls.push(url);
+            mediaFiles.push(file);
+            uploadMedia(file, type).then(url => {
+                uploadedMediaUrls.push(url);
+                document.getElementById('imageUrlInput').value = uploadedMediaUrls.join(';');
             }).catch(error => {
                 console.error('Upload failed:', error);
-                alert('Failed to upload image. Please try again.');
+                alert('Failed to upload media. Please try again.');
             });
         }
 
@@ -122,8 +149,8 @@
         const containerName = 'firedoors1';
         const sasToken = "?sv=2022-11-02&ss=bfqt&srt=o&sp=rwdlacupiytfx&se=2025-05-01T11:30:24Z&st=2024-11-03T02:30:24Z&spr=https&sig=3uRVgEz%2BaObXlwv3iR%2FRHM73GZHmVQHBcH0wtGFOFnc%3D";
 
-        async function uploadImage(file, retries = 3) {
-            const blobName = `image_${Date.now()}.jpg`;
+        async function uploadMedia(file, type, retries = 3) {
+            const blobName = `${type}_${Date.now()}.${type === 'image' ? 'jpg' : 'mp4'}`;
             const url = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blobName}${sasToken}`;
 
             try {
@@ -147,7 +174,7 @@
                 console.error('Error during fetch:', error);
                 if (retries > 0) {
                     console.log(`Retrying upload... (${retries} retries left)`);
-                    return uploadImage(file, retries - 1);
+                    return uploadMedia(file, type, retries - 1);
                 } else {
                     throw error;
                 }
@@ -157,7 +184,7 @@
         document.querySelector('form[action="/em_lights"]').addEventListener('submit', function(event) {
             event.preventDefault();
             const imageUrlInput = document.getElementById('imageUrlInput');
-            imageUrlInput.value = uploadedImageUrls.join(';');
+            imageUrlInput.value = uploadedMediaUrls.join(';');
             this.submit();
         });
 

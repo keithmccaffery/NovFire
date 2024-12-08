@@ -15,35 +15,30 @@
 
 <div class="content-box">
     {% for result in results %}
-    <h4>{{result.asset}}</h4>
+    <h4>{{ result.asset }}</h4>
     <h5>Defect: </h5>
-    <p>{{result.fault }}</p>
+    <p>{{ result.fault }}</p>
     <br>
     
-    <div class="image-container">
+    <div class="media-container">
         {% for url in result.image_urls %}
-            <img src="{{ url }}" alt="Image">
+            {% if '.jpg' in url or '.jpeg' in url or '.png' in url %}
+                <img src="{{ url }}" alt="Image" style="max-width: 100%; height: auto;">
+            {% elif '.mp4' in url %}
+                <video controls style="max-width: 100%; height: auto;">
+                    <source src="{{ url }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            {% endif %}
         {% endfor %}
     </div>
     <div style="clear: both;"></div> <!-- Clear the float -->
     <br>
     <h5>Remedy: </h5>
-    <p>{{result.remedy }}</p> <br>
+    <p>{{ result.remedy }}</p> <br>
     <br>
     <h5>Additional Information:</h5>
-    <p>{{result.comment }}</p> <br>
-    <br>
-    <hr>
-    <br>
+    <p>{{ result.comment }}</p> <br>
     {% endfor %}
 </div>
-<script>
-    document.addEventListener('DOMContentLoaded', (event) => {
-        console.log(document.documentElement.innerHTML);
-    });
-</script>
-
-
-
-
 {% endblock %}
