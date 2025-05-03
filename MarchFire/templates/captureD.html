@@ -32,6 +32,8 @@
     </style>
     <!-- Include Compressor.js library -->
     <script src="https://cdn.jsdelivr.net/npm/compressorjs@1.0.7/dist/compressor.min.js"></script>
+    <!-- Include config.js -->
+    <script src="/static/config.js"></script>
 </head>
 <body>
     <label for="cameraInput" class="custom-file-upload">Capture Image with Camera<span id="cameraFileName"></span></label>
@@ -145,13 +147,9 @@
             });
         }
 
-        const storageAccountName = 'firstfire';
-        const containerName = 'firedoors1';
-        const sasToken = "?sv=2022-11-02&ss=bfqt&srt=o&sp=rwdlacupiytfx&se=2025-05-01T11:30:24Z&st=2024-11-03T02:30:24Z&spr=https&sig=3uRVgEz%2BaObXlwv3iR%2FRHM73GZHmVQHBcH0wtGFOFnc%3D";
-
         async function uploadMedia(file, type, retries = 3) {
             const blobName = `${type}_${Date.now()}.${type === 'image' ? 'jpg' : 'mp4'}`;
-            const url = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blobName}${sasToken}`;
+            const url = `https://${config.storageAccountName}.blob.core.windows.net/${config.containerName}/${blobName}${config.sasToken}`;
 
             try {
                 const response = await fetch(url, {
